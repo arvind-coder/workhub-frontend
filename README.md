@@ -58,7 +58,7 @@ Authenticated pages are client components behind the app shell (data is per-user
 
 ## API coverage (verified against the live API and the OpenAPI document)
 
-Integrated: `POST /auth/register|login|logout`, `GET /auth/me`, token refresh (server-side), `GET|POST /projects`, `GET|PATCH|DELETE /projects/{id}`, `GET /projects/{id}/stats`, `GET|POST /projects/{id}/members`, `DELETE /projects/{id}/members/{userId}`, `PATCH …/members/{userId}/role`, `GET|POST /projects/{id}/tasks` (search, status, priority, assignedTo, overdue, sort, pagination), `GET|PATCH|DELETE …/tasks/{taskId}`, `GET|POST …/tasks/{taskId}/comments`, `GET …/tasks/{taskId}/activities`.
+Integrated: `POST /auth/register|login|logout`, `GET /auth/me`, token refresh (server-side), `GET|POST /projects`, `GET|PATCH|DELETE /projects/{id}`, `GET /projects/{id}/stats`, `GET /users?search=`, `GET|POST /projects/{id}/members`, `DELETE /projects/{id}/members/{userId}`, `PATCH …/members/{userId}/role`, `GET|POST /projects/{id}/tasks` (search, status, priority, assignedTo, overdue, sort, pagination), `GET|PATCH|DELETE …/tasks/{taskId}`, `GET|POST …/tasks/{taskId}/comments`, `GET …/tasks/{taskId}/activities`.
 
 ### Backend gaps and how the UI handles them
 
@@ -66,7 +66,7 @@ Integrated: `POST /auth/register|login|logout`, `GET /auth/me`, token refresh (s
 | --- | --- |
 | No global dashboard/stats endpoint | Overview aggregates the real per-project `/stats` of your 12 most recently updated projects (and says so when truncated). |
 | No cross-project task list | *My Tasks* queries each project with `assignedTo=<me>` (up to 25 projects); merge/sort happens client-side after server-side filtering. |
-| No user directory / search | Members are added by **user ID** (copyable from Settings). A real picker needs e.g. `GET /users?search=`. |
+| ~~No user directory / search~~ (resolved) | The backend now has `GET /users?search=` (min 2 chars, max 20 results, id/name/email only), and *Add member* is a name/email search picker. If the deployed backend predates that endpoint, the dialog offers **Add by user ID** instead. |
 | Tasks/comments carry only user IDs | Names are resolved from the project member list and the current user. |
 | Project **owner is not in the members list** | The owner is shown as "Project owner" with the name unavailable unless it is you. Needs an `owner` object on `Project`. |
 | No priority breakdown in stats (only `highPriority`) | No priority chart is drawn; high-priority is a metric instead. |
@@ -77,6 +77,8 @@ Integrated: `POST /auth/register|login|logout`, `GET /auth/me`, token refresh (s
 | Only ADMIN/PROJECT_MANAGER can create projects; sign-up always creates `MEMBER` | Create actions are hidden for members, with explanatory empty states. There is no self-service path to a PM account. |
 
 ## Security notes (need your attention)
+
+0. **User search exposes names and emails** of all registered users to any signed-in user (minimum 2 characters, 20 results, no role/credentials). If that is too open, restrict `GET /users` in the backend to `ADMIN`/`PROJECT_MANAGER`.
 
 1. **Shared rate limits.** The backend limits by IP: **10 auth requests / 15 min** (this includes `/auth/me` and `/auth/refresh`, not just login) and 300 API requests / 15 min. Behind the proxy **all users share one egress IP**, so the limit is shared by everyone. Mitigations here: the user profile is cached per session so `/me` rarely hits the backend, queries are cached for 60 s, and fan-out is capped. For real multi-user traffic the backend should key limiters by user/forwarded IP, or exempt `/auth/me` and `/auth/refresh`.
 2. **Multi-instance refresh race.** Refresh de-duplication is in-memory per server instance. On serverless hosting with several instances, two instances can still race on the same single-use token. Fixes: sticky sessions, a shared store (e.g. Redis) for the in-flight refresh, or a short server-side grace window for token reuse on the backend.

@@ -16,6 +16,7 @@ import type {
   TaskListParams,
   TaskUpdateInput,
   User,
+  UserSummary,
 } from "@/types/api";
 
 type Signal = { signal?: AbortSignal };
@@ -25,6 +26,11 @@ export const authApi = {
   register: (input: RegisterInput) => apiRequest<User>("/auth/register", { method: "POST", body: input }),
   logout: () => apiRequest<{ message: string }>("/auth/logout", { method: "POST" }),
   me: ({ signal }: Signal = {}) => apiRequest<User>("/auth/me", { signal }),
+};
+
+export const usersApi = {
+  search: (search: string, { signal }: Signal = {}) =>
+    apiRequest<UserSummary[]>("/users", { query: { search, limit: 8 }, signal }),
 };
 
 export const projectsApi = {

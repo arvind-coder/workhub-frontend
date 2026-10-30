@@ -21,7 +21,7 @@ import {
 export const maxDuration = 60;
 
 // Only paths that exist in the backend's OpenAPI document are forwarded.
-const ALLOWED_PATH = /^(auth\/(login|register|logout|me)|projects(\/[a-fA-F0-9]{24}(\/(members|tasks|stats)(\/[a-fA-F0-9]{24}(\/(role|comments|activities))?)?)?)?)$/;
+const ALLOWED_PATH = /^(auth\/(login|register|logout|me)|users|projects(\/[a-fA-F0-9]{24}(\/(members|tasks|stats)(\/[a-fA-F0-9]{24}(\/(role|comments|activities))?)?)?)?)$/;
 
 const BODY_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 

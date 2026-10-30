@@ -3,6 +3,9 @@ import type { ProjectListParams, TaskListParams } from "@/types/api";
 /** Query-key factory. Keys nest so invalidating a prefix refreshes a whole area. */
 export const keys = {
   me: ["auth", "me"] as const,
+  users: {
+    search: (search: string) => ["users", "search", search] as const,
+  },
   projects: {
     all: ["projects"] as const,
     lists: ["projects", "list"] as const,

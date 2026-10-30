@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { membersApi } from "@/lib/api/endpoints";
+import { membersApi, usersApi } from "@/lib/api/endpoints";
 import { keys } from "@/lib/api/keys";
 import { useCurrentUser } from "@/features/auth/hooks";
 import type { MemberRole } from "@/types/api";
@@ -69,4 +69,17 @@ export function usePeople(projectId: string) {
   const resolve = useCallback((userId?: string | null) => (userId ? directory.get(userId) : undefined), [directory]);
 
   return { resolve, people: directory, members, isLoading: members.isLoading };
+}
+
+export const MIN_USER_SEARCH_LENGTH = 2;
+
+/** Server-side people search used by the "Add member" picker. */
+export function useUserSearch(term: string) {
+  const query = term.trim();
+  return useQuery({
+    queryKey: keys.users.search(query),
+    queryFn: ({ signal }) => usersApi.search(query, { signal }),
+    enabled: query.length >= MIN_USER_SEARCH_LENGTH,
+    staleTime: 30_000,
+  });
 }

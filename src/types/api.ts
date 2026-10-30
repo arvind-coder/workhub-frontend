@@ -15,6 +15,13 @@ export interface User {
   updatedAt: string;
 }
 
+/** Result of GET /users?search= (no role or credentials are exposed). */
+export interface UserSummary {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Project {
   id: string;
   name: string;

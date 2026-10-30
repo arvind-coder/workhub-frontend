@@ -125,7 +125,7 @@ describe("BFF proxy: authenticated calls", () => {
 
 describe("BFF proxy: hardening", () => {
   it("only forwards documented backend paths", async () => {
-    for (const path of ["auth/refresh", "health", "docs", "projects/not-an-id", "users"]) {
+    for (const path of ["auth/refresh", "health", "docs", "projects/not-an-id", "users/64b0f1a2c3d4e5f6a7b8c9d0", "users/me"]) {
       const res = await GET(call("GET", path, { cookie: "wh_at=A" }), ctx(path));
       expect(res.status).toBe(404);
     }
@@ -135,7 +135,7 @@ describe("BFF proxy: hardening", () => {
   it("forwards nested project routes", async () => {
     fetchMock.mockImplementation(async () => json({ success: true, data: [] }));
     const id = "64b0f1a2c3d4e5f6a7b8c9d0";
-    for (const path of [`projects/${id}`, `projects/${id}/members`, `projects/${id}/tasks/${id}/comments`, `projects/${id}/tasks/${id}/activities`, `projects/${id}/stats`, `projects/${id}/members/${id}/role`]) {
+    for (const path of ["users", `projects/${id}`, `projects/${id}/members`, `projects/${id}/tasks/${id}/comments`, `projects/${id}/tasks/${id}/activities`, `projects/${id}/stats`, `projects/${id}/members/${id}/role`]) {
       expect((await GET(call("GET", path, { cookie: "wh_at=A" }), ctx(path))).status).toBe(200);
     }
   });
