@@ -144,6 +144,11 @@ export interface TaskCreateInput {
   priority?: TaskPriority;
   dueDate?: string;
 }
+export interface TaskSuggestion {
+  title: string;
+  description: string;
+  priority: TaskPriority;
+}
 export interface TaskUpdateInput {
   title?: string;
   description?: string;

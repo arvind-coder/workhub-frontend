@@ -41,6 +41,12 @@ export function useCreateTask(projectId: string) {
   });
 }
 
+export function useGenerateTasks(projectId: string) {
+  return useMutation({
+    mutationFn: (requirement: string) => tasksApi.generate(projectId, requirement),
+  });
+}
+
 export function useUpdateTask(projectId: string, taskId: string) {
   const queryClient = useQueryClient();
   return useMutation({

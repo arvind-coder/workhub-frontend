@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList, KanbanSquare, List, Plus, SearchX } from "lucide-react";
+import { ClipboardList, KanbanSquare, List, Plus, SearchX, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import { getErrorMessage } from "@/lib/api/errors";
 import type { Task } from "@/types/api";
 import { KanbanBoard } from "./kanban-board";
 import { TaskFilterBar, useTaskFilters } from "./task-filters";
+import { AiTaskDialog } from "./ai-task-dialog";
 import { TaskFormDialog } from "./task-form-dialog";
 import { TaskList, type TaskActions } from "./task-list";
 import { TaskSheet } from "./task-sheet";
@@ -37,6 +38,7 @@ export function ProjectTasks({ projectId }: { projectId: string }) {
   const del = useDeleteTask(projectId);
 
   const [creating, setCreating] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [deleting, setDeleting] = useState<Task | null>(null);
 
@@ -67,9 +69,14 @@ export function ProjectTasks({ projectId }: { projectId: string }) {
             <KanbanSquare aria-hidden /> Board
           </Button>
         </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus aria-hidden /> New task
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setGenerating(true)}>
+            <Sparkles aria-hidden /> Generate with AI
+          </Button>
+          <Button onClick={() => setCreating(true)}>
+            <Plus aria-hidden /> New task
+          </Button>
+        </div>
       </div>
 
       {archived && (
@@ -130,6 +137,7 @@ export function ProjectTasks({ projectId }: { projectId: string }) {
       )}
 
       <TaskFormDialog open={creating} onOpenChange={setCreating} projectId={projectId} ownerId={access.project.data?.ownerId} />
+      {generating && <AiTaskDialog projectId={projectId} onClose={() => setGenerating(false)} />}
       {editing && (
         <TaskFormDialog open onOpenChange={(o) => !o && setEditing(null)} projectId={projectId} ownerId={access.project.data?.ownerId} task={editing} />
       )}

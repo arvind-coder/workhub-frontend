@@ -14,6 +14,7 @@ import type {
   TaskComment,
   TaskCreateInput,
   TaskListParams,
+  TaskSuggestion,
   TaskUpdateInput,
   User,
   UserSummary,
@@ -51,6 +52,11 @@ export const tasksApi = {
     apiRequest<Task>(`/projects/${projectId}/tasks/${taskId}`, { signal }),
   create: (projectId: string, input: TaskCreateInput) =>
     apiRequest<Task>(`/projects/${projectId}/tasks`, { method: "POST", body: input }),
+  generate: (projectId: string, requirement: string) =>
+    apiRequest<{ tasks: TaskSuggestion[] }>(`/projects/${projectId}/tasks/generate`, {
+      method: "POST",
+      body: { requirement },
+    }),
   update: (projectId: string, taskId: string, input: TaskUpdateInput) =>
     apiRequest<Task>(`/projects/${projectId}/tasks/${taskId}`, { method: "PATCH", body: input }),
   remove: (projectId: string, taskId: string) =>
