@@ -7,9 +7,11 @@ Stack: Next.js 16 · React 19 · TypeScript (strict) · Tailwind CSS 4 · shadcn
 
 ```bash
 npm install
-cp .env.example .env.local   # optional: the default already points at the deployed API
+cp .env.example .env.local   # then set NEXT_PUBLIC_API_BASE_URL (see below)
 npm run dev                  # http://localhost:3000
 ```
+
+To run against your own backend, start it first (`../backend`: `npm run seed && npm run dev`, listening on http://localhost:5000), set `NEXT_PUBLIC_API_BASE_URL=http://localhost:5000` in `.env.local`, and sign in with a demo account such as `manager@workhub.demo` / `Demo@12345` (see the backend README for the full list). The default in `.env.example` points at a hosted API instead.
 
 | Command | Purpose |
 | --- | --- |
@@ -17,7 +19,7 @@ npm run dev                  # http://localhost:3000
 | `npm run build` / `npm start` | Production build / server |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `next typegen` + `tsc --noEmit` (route types are generated, so run this rather than bare `tsc`) |
-| `npm test` | Vitest (75 tests) |
+| `npm test` | Vitest |
 
 ### Environment
 
@@ -58,7 +60,7 @@ Authenticated pages are client components behind the app shell (data is per-user
 
 ## API coverage (verified against the live API and the OpenAPI document)
 
-Integrated: `POST /auth/register|login|logout`, `GET /auth/me`, token refresh (server-side), `GET|POST /projects`, `GET|PATCH|DELETE /projects/{id}`, `GET /projects/{id}/stats`, `GET /users?search=`, `GET|POST /projects/{id}/members`, `DELETE /projects/{id}/members/{userId}`, `PATCH …/members/{userId}/role`, `GET|POST /projects/{id}/tasks` (search, status, priority, assignedTo, overdue, sort, pagination), `GET|PATCH|DELETE …/tasks/{taskId}`, `GET|POST …/tasks/{taskId}/comments`, `GET …/tasks/{taskId}/activities`.
+Integrated: `POST /auth/register|login|logout`, `GET /auth/me`, token refresh (server-side), `GET|POST /projects`, `GET|PATCH|DELETE /projects/{id}`, `GET /projects/{id}/stats`, `GET /users?search=`, `GET|POST /projects/{id}/members`, `DELETE /projects/{id}/members/{userId}`, `PATCH …/members/{userId}/role`, `POST /projects/{id}/tasks/generate` (AI task suggestions), `GET|POST /projects/{id}/tasks` (search, status, priority, assignedTo, overdue, sort, pagination), `GET|PATCH|DELETE …/tasks/{taskId}`, `GET|POST …/tasks/{taskId}/comments`, `GET …/tasks/{taskId}/activities`.
 
 ### Backend gaps and how the UI handles them
 
@@ -76,11 +78,15 @@ Integrated: `POST /auth/register|login|logout`, `GET /auth/me`, token refresh (s
 | No task ordering field | The board changes status only, not in-column order. |
 | Only ADMIN/PROJECT_MANAGER can create projects; sign-up always creates `MEMBER` | Create actions are hidden for members, with explanatory empty states. There is no self-service path to a PM account. |
 
+## AI task generator
+
+*Generate with AI* on a project's task page sends a feature requirement to the backend (`POST /projects/{id}/tasks/generate`), which asks Google Gemini for a task breakdown. The suggestions open in an editable list: change titles, descriptions and priorities, untick what you do not want, then save. Nothing is stored until you confirm, and tasks that fail to save stay in the list so you can retry. It needs `GEMINI_API_KEY` on the **backend** (the key never reaches the browser).
+
 ## Security notes (need your attention)
 
 0. **User search exposes names and emails** of all registered users to any signed-in user (minimum 2 characters, 20 results, no role/credentials). If that is too open, restrict `GET /users` in the backend to `ADMIN`/`PROJECT_MANAGER`.
 
-1. **Shared rate limits.** The backend limits by IP: **10 auth requests / 15 min** (this includes `/auth/me` and `/auth/refresh`, not just login) and 300 API requests / 15 min. Behind the proxy **all users share one egress IP**, so the limit is shared by everyone. Mitigations here: the user profile is cached per session so `/me` rarely hits the backend, queries are cached for 60 s, and fan-out is capped. For real multi-user traffic the backend should key limiters by user/forwarded IP, or exempt `/auth/me` and `/auth/refresh`.
+1. **Shared rate limits.** The backend limits by IP: **10 auth requests / 15 min** (this includes `/auth/me` and `/auth/refresh`, not just login), 300 API requests / 15 min, and 10 AI generation requests / 15 min. Behind the proxy **all users share one egress IP**, so the limit is shared by everyone. Mitigations here: the user profile is cached per session so `/me` rarely hits the backend, queries are cached for 60 s, and fan-out is capped. For real multi-user traffic the backend should key limiters by user/forwarded IP, or exempt `/auth/me` and `/auth/refresh`.
 2. **Multi-instance refresh race.** Refresh de-duplication is in-memory per server instance. On serverless hosting with several instances, two instances can still race on the same single-use token. Fixes: sticky sessions, a shared store (e.g. Redis) for the in-flight refresh, or a short server-side grace window for token reuse on the backend.
 3. Access tokens stay valid for up to 15 minutes after logout (stateless JWT); logout revokes the refresh token only.
 4. Role/permission hints in the UI are conveniences; the API is the authority and its 403s are always surfaced.
@@ -96,4 +102,4 @@ Self-hosting: `npm run build && npm start` behind a TLS-terminating proxy that s
 
 ## Testing
 
-`npm test` covers: Zod schemas, utilities and permission rules, API-client error handling (401/403/404/network/abort), route protection (`proxy.ts`), the login form, the project create/edit form, optimistic task-status updates with rollback, and the proxy route (cookie handling, token secrecy, single refresh under concurrency, allow-list, CSRF). Mocks exist only in tests. The app itself always talks to the real API.
+`npm test` covers: Zod schemas, utilities and permission rules, API-client error handling (401/403/404/network/abort), route protection (`proxy.ts`), the login form, the project create/edit form, the add-member dialog, the AI task generator dialog, optimistic task-status updates with rollback, and the proxy route (cookie handling, token secrecy, single refresh under concurrency, allow-list, CSRF). Mocks exist only in tests. The app itself always talks to the real API.
